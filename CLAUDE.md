@@ -50,7 +50,8 @@ com.train.reservation
 │   └── dto/                     요청·응답 DTO (record)
 ├── station/
 ├── train/                   ← train, seat, train_run, train_stop, fare
-└── reservation/             ← reservation, reservation_detail, passenger, payment, refund, ticket
+├── reservation/             ← reservation, reservation_detail, passenger, ticket
+└── payment/                 ← payment, refund
 ```
 
 - **Controller**: 요청 받고 응답만 한다. 로직은 Service로. 엔티티를 그대로 응답하지 않고 DTO로 바꾼다.
