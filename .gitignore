@@ -32,3 +32,5 @@ Thumbs.db
 
 # 로그
 *.log
+# Claude Code 개인 설정
+.claude/settings.local.json
