@@ -20,7 +20,7 @@ train-reservation-system/
 ├── src/main/java/...              ← 백엔드 코드
 ├── src/main/resources/
 │   ├── application.properties     ← DB 연결 설정
-│   ├── schema.sql                 ← 테이블 생성 DDL (서버 시작 시 자동 실행)
+│   ├── db/schema.sql              ← 테이블 생성 DDL (서버 시작 시 자동 실행)
 │   └── static/                    ← Vue 빌드 결과물이 들어가는 곳
 └── frontend/                      ← 프론트엔드 (Vue)
 ```
@@ -52,7 +52,7 @@ train-reservation-system/
 4. (선택) `train` 계정으로 연결을 하나 더 만들어두기
     - Default Schema는 `train_reservation`
 
-> 테이블은 직접 만들 필요 없어요. 백엔드 서버를 켜면 schema.sql이 자동으로 실행돼서 만들어져요.
+> 테이블은 직접 만들 필요 없어요. 백엔드 서버를 켜면 db/schema.sql이 자동으로 실행돼서 만들어져요.
 > 
 
 ## 자주 나는 오류
