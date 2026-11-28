@@ -18,7 +18,6 @@
 
 스테이징(`git add`, `git mv`)도 요청이 있을 때만 한다. 파일 이동은 `git mv` 대신 일반 `mv`로 한다.
 커밋 메시지는 추천만 하고, 실행은 사용자가 직접 하거나 허락한 뒤에 한다.
-커밋 메시지 형식은 기존 이력을 따른다: `docs: ...`, `chore(back): ...`, `feat(back): ...`, `fix(back): ...`
 
 ## DB 데이터: 허락 없이는 절대 진행하지 않기
 - INSERT / UPDATE / DELETE / DROP / TRUNCATE 등 데이터나 테이블을 바꾸는 SQL 실행
@@ -28,9 +27,19 @@
 
 SELECT로 조회만 하는 것도 먼저 어떤 쿼리를 실행할지 알려준다.
 
-## 개발 정책 (`docs/개발정책.md`)
-- 회원·테스트·DB·브랜치 등 팀에서 정한 정책은 `docs/개발정책.md`를 따른다. 이 파일과 내용이 다르면 개발정책.md가 우선이다.
-- 사용자와 새 정책을 정하면 개발정책.md에 추가할지 물어본다.
+## 회원 정책
+- 비밀번호는 BCrypt로 암호화해서 저장한다. (`spring-security-crypto`만 사용, Spring Security 전체는 쓰지 않음)
+- 로그인 실패는 아이디가 없든 비밀번호가 틀리든 `401 LOGIN_FAILED` 하나로 응답한다.
+- 서버는 로그인 상태를 기억하지 않는다. 로그인 응답의 `memberId`를 프론트가 저장해서 보낸다. 로그아웃 API는 없다.
+- 회원상태(`member_status`): `ACTIVE`(정상) / `WITHDRAWN`(탈퇴). 가입 시 `ACTIVE`.
+- 아이디 중복은 가입 전에 확인하고, DB 유니크 제약 위반(`DuplicateKeyException`)도 `409 DUPLICATE_LOGIN_ID`로 바꾼다.
+
+## 테스트 정책
+- Repository 테스트: `@DataJdbcTest` + H2 (메모리 DB, 로컬 MySQL을 건드리지 않음)
+- Service 테스트: Mockito로 Repository를 가짜로 대체, DB 사용 안 함
+- `TrainReservationSystemApplicationTests`(`@SpringBootTest`)는 로컬 MySQL에 붙으므로 실행 전에 허락받는다.
+
+- 사용자와 새 정책을 정하면 이 파일에 추가할지 물어본다.
 
 ## API 명세 (`docs/API명세.md`)
 - 이 파일은 **프론트엔드에 공유하는 문서**다. 구현은 명세를 그대로 따른다.
@@ -41,23 +50,6 @@ SELECT로 조회만 하는 것도 먼저 어떤 쿼리를 실행할지 알려준
 ## 백엔드 구조 (Spring Data JDBC)
 기술: Java 21, Spring Boot 4.1.2, Spring Data JDBC, MySQL 8.4, Lombok
 
-도메인별 패키지 안에 계층을 둔다.
-
-```
-com.train.reservation
-├── global/exception/        ← ErrorCode, BusinessException, ApiErrorResponse, GlobalExceptionHandler
-├── member/                  ← 예: 회원
-│   ├── Member.java              엔티티 (@Table, @Id)
-│   ├── MemberRepository.java    Spring Data JDBC Repository
-│   ├── MemberService.java       비즈니스 로직, @Transactional
-│   ├── MemberController.java    @RestController, URL은 /api/...
-│   └── dto/                     요청·응답 DTO (record)
-├── station/
-├── train/                   ← train, seat, train_run, train_stop, fare
-├── reservation/             ← reservation, reservation_detail, passenger, ticket
-└── payment/                 ← payment, refund
-```
-
 - **Controller**: 요청 받고 응답만 한다. 로직은 Service로. 엔티티를 그대로 응답하지 않고 DTO로 바꾼다.
 - **Service**: 상태 변경은 `@Transactional`. 실패는 `throw new BusinessException(ErrorCode.XXX)`.
 - **Repository**: `CrudRepository`/`ListCrudRepository` 상속. 여러 테이블 조인 조회는 `@Query`로 네이티브 SQL을 쓰고 결과는 DTO/record로 받는다.
@@ -65,7 +57,7 @@ com.train.reservation
 - 컬럼명은 snake_case, 자바 필드는 camelCase (Spring Data JDBC가 자동 변환).
 - 금액은 `BigDecimal` (DB `DECIMAL(10,2)`), 날짜 `LocalDate`, 시간 `LocalTime`, 일시 `LocalDateTime`.
 - JSON 시간 형식은 명세대로 `06:00` (초 없음) — `@JsonFormat(pattern = "HH:mm")`.
-- 상태값은 명세의 한글 값(`예약대기`, `결제완료` 등)을 그대로 DB에 저장한다.
+- 상태값은 명세의 한글 값(`예약대기`, `결제완료` 등)을 그대로 DB에 저장한다. 명세에 없는 내부 값(회원상태 등)은 영어로 쓴다.
 
 ## SQL 파일
 - 모두 `src/main/resources/db/`에 둔다.
